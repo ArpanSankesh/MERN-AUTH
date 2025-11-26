@@ -35,13 +35,13 @@ export const register = async (req, res) => {
     const mailOptions = {
       from: process.env.SENDER_EMAIL,
       to: email,
-      subject: 'WELCOME TO MERN AUTH',
-      text: `Welcome to mern auth website. Your account has been created with email id ${email}`
-    }
+      subject: "WELCOME TO MERN AUTH",
+      text: `Welcome to mern auth website. Your account has been created with email id ${email}`,
+    };
 
     await transpoter.sendMail(mailOptions);
 
-    return res.json({ success: true, message:'User Created'});
+    return res.json({ success: true, message: "User Created" });
   } catch (error) {
     res.json({ success: false, message: error.message });
   }
@@ -80,22 +80,52 @@ export const login = async (req, res) => {
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
-    return res.json({ success: true, message:'Login Successfull'});
-} catch (error) {
+    return res.json({ success: true, message: "Login Successfull" });
+  } catch (error) {
     return res.json({ success: false, message: error.message });
-}
+  }
 };
 
 //----------------------------Logout----------------------------
 export const logout = async (req, res) => {
-    try {
-    res.clearCookie('token', {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: process.env.NODE_ENV == "production" ? "none" : "strict",
-    })
-    return res.json({ success: true, message:'User LOGGED OUT'});
- } catch (error) {
+  try {
+    res.clearCookie("token", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV == "production" ? "none" : "strict",
+    });
+    return res.json({ success: true, message: "User LOGGED OUT" });
+  } catch (error) {
     return res.json({ success: false, message: error.message });
- }
-}
+  }
+};
+
+//----------------------------Verification Otp----------------------------
+export const sendVerifyOtp = async (req, res) => {
+  try {
+    const { userId } = req.body;
+    const user = await userModel.findById({ userId });
+    if (user.isAccountVerified) {
+      return res.json({ success: false, message: "Account already Verified" });
+    }
+
+    const otp = String(Math.floor(100000 + Math.random() * 900000));
+
+    user.verifyOtp = otp;
+    user.verifyOtpExpireAt = Date.now() + 24 * 60 * 60 * 1000;
+
+    await user.save();
+
+    const mailOptions = {
+      from: process.env.SENDER_EMAIL,
+      to: user.email,
+      subject: "WELCOME TO MERN AUTH",
+      text: `Your OTP is ${otp}. verify your account using this OTP`,
+    };
+    await transpoter.sendMail(mailOptions);   
+    return res.json({ success: true, message: 'Verification OTP send on Email' });
+
+  } catch (error) {
+    return res.json({ success: false, message: error.message });
+  }
+};
