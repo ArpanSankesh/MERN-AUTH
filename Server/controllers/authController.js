@@ -1,6 +1,7 @@
 import bcrpty from "bcrypt";
 import jwt from "jsonwebtoken";
 import userModel from "../models/userModel.js";
+import transpoter from "../config/nodemailer.js";
 
 //----------------------------REGISTER USER----------------------------
 export const register = async (req, res) => {
@@ -31,6 +32,15 @@ export const register = async (req, res) => {
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
+    const mailOptions = {
+      from: process.env.SENDER_EMAIL,
+      to: email,
+      subject: 'WELCOME TO MERN AUTH',
+      text: `Welcome to mern auth website. Your account has been created with email id ${email}`
+    }
+
+    await transpoter.sendMail(mailOptions);
+
     return res.json({ success: true, message:'User Created'});
   } catch (error) {
     res.json({ success: false, message: error.message });
@@ -38,7 +48,6 @@ export const register = async (req, res) => {
 };
 
 // ----------------------------Login User----------------------------
-
 export const login = async (req, res) => {
   const { email, password } = req.body;
 
@@ -78,7 +87,6 @@ export const login = async (req, res) => {
 };
 
 //----------------------------Logout----------------------------
-
 export const logout = async (req, res) => {
     try {
     res.clearCookie('token', {
